@@ -4,9 +4,9 @@ import 'login_screen.dart';
 
 class ConfiguracionScreen extends StatefulWidget {
   final String username;
-  final String password;
+  final String token;
 
-  const ConfiguracionScreen({super.key, required this.username, required this.password});
+  const ConfiguracionScreen({super.key, required this.username, required this.token});
 
   @override
   State<ConfiguracionScreen> createState() => _ConfiguracionScreenState();
@@ -22,7 +22,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     _currentUsername = widget.username;
   }
 
-  // --- DIÁLOGO EDITAR PERFIL ---
   void _mostrarEditarPerfil() {
     final controller = TextEditingController(text: _currentUsername);
     showDialog(
@@ -37,38 +36,36 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-  if (controller.text.isEmpty) return;
-  
- 
-  final exito = await _authService.actualizarPerfil(controller.text, widget.username, widget.password);
-  
-  if (exito) {
-    
-    await _authService.guardarSesion(controller.text, widget.password);
-    
-    if (mounted) {
-      Navigator.pop(ctx); 
-      
-     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Nombre actualizado. Por favor inicia sesión nuevamente."),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        )
-      );
+              if (controller.text.isEmpty) return;
+              
+              final exito = await _authService.actualizarPerfil(controller.text, widget.token);
+              
+              if (exito) {
+                await _authService.guardarSesion(widget.token, controller.text);
+                
+                if (mounted) {
+                  Navigator.pop(ctx); 
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Nombre actualizado. Por favor inicia sesión nuevamente."),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    )
+                  );
 
-      Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false, 
-        );
-      });
-    }
-  } else {
-    _msg("Error: Nombre en uso o inválido");
-  }
-},
+                  Future.delayed(const Duration(seconds: 2), () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false, 
+                    );
+                  });
+                }
+              } else {
+                _msg("Error: Nombre en uso o inválido");
+              }
+            },
             child: const Text("Guardar"),
           )
         ],
@@ -76,7 +73,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     );
   }
 
-  
   void _mostrarCambiarPass() {
     final oldCtrl = TextEditingController();
     final newCtrl = TextEditingController();
@@ -96,22 +92,15 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
-              if (oldCtrl.text != widget.password) {
-                _msg("La contraseña actual no coincide");
-                return;
-              }
-              final exito = await _authService.cambiarPassword(widget.password, newCtrl.text, widget.username);
+              final exito = await _authService.cambiarPassword(oldCtrl.text, newCtrl.text, widget.token);
               if (exito) {
-                
-                await _authService.guardarSesion(widget.username, newCtrl.text);
                 if (mounted) {
                    Navigator.pop(ctx); 
-                   
                    _cerrarSesionTotal(); 
                 }
                 _msg("Contraseña cambiada. Por favor inicia sesión de nuevo.");
               } else {
-                _msg("Error al cambiar contraseña");
+                _msg("Error al cambiar contraseña o contraseña actual incorrecta");
               }
             },
             child: const Text("Cambiar"),
@@ -121,7 +110,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
     );
   }
 
-  // --- ELIMINAR CUENTA ---
   void _confirmarEliminar() {
     showDialog(
       context: context,
@@ -133,7 +121,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () async {
-              final exito = await _authService.eliminarCuenta(widget.username, widget.password);
+              final exito = await _authService.eliminarCuenta(widget.token);
               if (exito) {
                 _cerrarSesionTotal();
               } else {
@@ -167,7 +155,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
       appBar: AppBar(title: const Text("Configuración")),
       body: ListView(
         children: [
-          
           _SeccionTitulo("PERFIL"),
           ListTile(
             leading: const Icon(Icons.person, color: Color(0xFF0033A0)),
@@ -179,7 +166,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           
           const Divider(),
 
-          
           _SeccionTitulo("SEGURIDAD"),
           ListTile(
             leading: const Icon(Icons.lock, color: Colors.orange),
@@ -190,7 +176,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           ),
           const Divider(),
 
-          
           _SeccionTitulo("INFORMACIÓN"),
           ListTile(
             leading: const Icon(Icons.info_outline, color: Colors.grey),
@@ -210,7 +195,6 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           ),
           const Divider(),
 
-          
           _SeccionTitulo("ZONA DE PELIGRO", color: Colors.red),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
@@ -240,7 +224,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
               decoration: const InputDecoration(
                 hintText: "Escribe tu idea aquí...",
                 border: OutlineInputBorder(),
-                filled: true,
+                
               ),
             ),
           ],
@@ -252,10 +236,10 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
             onPressed: () async {
               if (textCtrl.text.isEmpty) return;
               
-              Navigator.pop(ctx); // Cerramos rápido
+              Navigator.pop(ctx);
               _msg("Enviando...");
               
-              final exito = await _authService.enviarSugerencia(textCtrl.text, widget.username, widget.password);
+              final exito = await _authService.enviarSugerencia(textCtrl.text, widget.token);
               
               if (exito) {
                 _msg("¡Gracias! Hemos recibido tu sugerencia 📧");

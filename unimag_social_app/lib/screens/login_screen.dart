@@ -47,16 +47,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = false);
 
     if (res['success']) {
+      final token = res['data']['token'];
       final user = res['data']['username'];
-      final pass = _passController.text;
       
-      await _authService.guardarSesion(user, pass);
+      await _authService.guardarSesion(token, user);
       
       if (!mounted) return;
       Navigator.pushReplacement(
         context, 
         MaterialPageRoute(
-          builder: (_) => FeedScreen(username: user, password: pass)
+          builder: (_) => const FeedScreen()
         )
       );
     } else {
@@ -145,11 +145,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
                         borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black26, 
                             blurRadius: 20, 
-                            offset: const Offset(0, 10)
+                            offset: Offset(0, 10)
                           )
                         ],
                       ),
@@ -274,8 +274,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(15), 
         borderSide: BorderSide.none
       ),
-      filled: true,
-      fillColor: Colors.grey[100],
+     
+
       contentPadding: const EdgeInsets.symmetric(
         vertical: 18, 
         horizontal: 20

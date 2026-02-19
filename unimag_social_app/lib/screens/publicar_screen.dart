@@ -124,8 +124,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                 hintText: "Ej: Llaves, Carnet, Venta...",
                 prefixIcon: const Icon(Icons.title, color: Color(0xFF0033A0)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                filled: true,
-                fillColor: Colors.grey[50],
+                
               ),
             ),
             const SizedBox(height: 15),
@@ -136,8 +135,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                 labelText: "Estado del objeto / Tipo",
                 prefixIcon: const Icon(Icons.info_outline, color: Color(0xFF0033A0)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                filled: true,
-                fillColor: Colors.grey[50],
+               
               ),
               items: const [
                 DropdownMenuItem(value: 'N/A', child: Text("N/A - Ninguna (Por defecto)")),
@@ -156,8 +154,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
                 hintText: "¿Qué encontraste? ¿Qué buscas?",
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                filled: true,
-                fillColor: Colors.grey[50],
+                
               ),
             ),
             const SizedBox(height: 15),
@@ -169,8 +166,8 @@ class _PublicarScreenState extends State<PublicarScreen> {
                 hintText: "Ej: Bloque Sierra Nevada",
                 prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF0033A0)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                filled: true,
-                fillColor: Colors.grey[50],
+                
+                
               ),
             ),
             const SizedBox(height: 20),

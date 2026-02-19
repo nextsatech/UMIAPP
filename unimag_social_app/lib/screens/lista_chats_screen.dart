@@ -4,9 +4,9 @@ import 'chat_screen.dart';
 
 class ListaChatsScreen extends StatefulWidget {
   final String username;
-  final String password;
+  final String token;
 
-  const ListaChatsScreen({super.key, required this.username, required this.password});
+  const ListaChatsScreen({super.key, required this.username, required this.token});
 
   @override
   State<ListaChatsScreen> createState() => _ListaChatsScreenState();
@@ -24,7 +24,7 @@ class _ListaChatsScreenState extends State<ListaChatsScreen> {
   }
 
   void _cargarChats() async {
-    final res = await _service.getChatsActivos(widget.username, widget.password);
+    final res = await _service.getChatsActivos(widget.token);
     if (mounted) setState(() { _chats = res; _loading = false; });
   }
 
@@ -54,7 +54,7 @@ class _ListaChatsScreenState extends State<ListaChatsScreen> {
                       otroUsuarioId: chat['usuario_id'],
                       otroUsuarioNombre: chat['usuario_nombre'],
                       myUser: widget.username,
-                      myPass: widget.password
+                      token: widget.token
                     )));
                   },
                 );

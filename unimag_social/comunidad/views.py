@@ -25,6 +25,9 @@ import string
 from django.contrib.auth.hashers import check_password
 from django.db.models import Q
 from django.conf import settings
+from rest_framework.authtoken.models import Token
+from django.db import transaction
+
 
 # --- FUNCIONES DE CORREO Y SUGERENCIAS ---
 
@@ -62,17 +65,13 @@ def enviar_sugerencia(request):
         return Response({'success': False, 'message': 'Error al enviar correo'}, status=500)
 
 def enviar_correo_unimag(email, codigo):
-    try:
-        send_mail(
-            'Tu código de verificación UMi',
-            f'Tu código es: {codigo}',
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        print(f"Error enviando código: {e}")
-
+    send_mail(
+        'Tu código de verificación UMi',
+        f'Tu código es: {codigo}',
+        settings.EMAIL_HOST_USER,
+        [email],
+        fail_silently=False,
+    )
 # --- VISTAS DE FORO ---
 
 class PostForoViewSet(viewsets.ModelViewSet):
@@ -109,12 +108,15 @@ class SolicitarCodigoView(APIView):
 
             codigo_generado = ''.join(random.choices(string.digits, k=6))
             
+            try:
+                enviar_correo_unimag(email, codigo_generado)
+            except Exception:
+                return Response({"error": "Error al enviar el correo de verificación. Intenta nuevamente."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
             CodigoVerificacion.objects.update_or_create(
                 correo=email,
                 defaults={'codigo': codigo_generado}
             )
-            
-            enviar_correo_unimag(email, codigo_generado)
             
             return Response({"mensaje": "Código enviado a tu correo"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -139,29 +141,36 @@ class RegistrarUsuarioView(APIView):
 
             username = data.get('username')
             if not username:
-                aleatorio = ''.join(random.choices(string.digits, k=4))
-                username = f"estudiante_{aleatorio}"
-            
-            if User.objects.filter(username=username).exists():
-                 return Response({"error": "Ese nombre de usuario ya existe"}, status=status.HTTP_400_BAD_REQUEST)
+                while True:
+                    aleatorio = ''.join(random.choices(string.digits, k=4))
+                    username = f"estudiante_{aleatorio}"
+                    if not User.objects.filter(username=username).exists():
+                        break
+            else:
+                if User.objects.filter(username=username).exists():
+                     return Response({"error": "Ese nombre de usuario ya existe"}, status=status.HTTP_400_BAD_REQUEST)
 
-            nuevo_usuario = User.objects.create_user(username=username, email=email, password=data['password'])
-            
-            PerfilEstudiante.objects.create(
-                usuario=nuevo_usuario,
-                carrera=data['carrera'],
-                es_verificado=True
-            )
-            
-            registro_codigo.delete()
+            try:
+                with transaction.atomic():
+                    nuevo_usuario = User.objects.create_user(username=username, email=email, password=data['password'])
+                    
+                    PerfilEstudiante.objects.create(
+                        usuario=nuevo_usuario,
+                        carrera=data['carrera'],
+                        es_verificado=True
+                    )
+                    
+                    registro_codigo.delete()
 
-            return Response({
-                "mensaje": "Usuario creado con éxito",
-                "usuario": username
-            }, status=status.HTTP_201_CREATED)
+                return Response({
+                    "mensaje": "Usuario creado con éxito",
+                    "usuario": username
+                }, status=status.HTTP_201_CREATED)
+            
+            except Exception as e:
+                return Response({"error": "Error interno al crear el usuario."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class LoginView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -180,8 +189,12 @@ class LoginView(APIView):
                     carrera_usuario = user.perfilestudiante.carrera
                 except Exception:
                     carrera_usuario = "ADMINISTRADOR"
+                
+                token, created = Token.objects.get_or_create(user=user)
+                
                 return Response({
                     "mensaje": "Login exitoso",
+                    "token": token.key,
                     "username": user.username,
                     "carrera": carrera_usuario,
                 }, status=status.HTTP_200_OK)
@@ -189,7 +202,6 @@ class LoginView(APIView):
                 return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # --- VISTAS DE OBJETOS PERDIDOS ---
 
 class ObjetoPerdidoListCreateView(generics.ListCreateAPIView):
@@ -253,18 +265,21 @@ def recuperar_password_solicitar(request):
 
         codigo = str(random.randint(100000, 999999))
         
+        try:
+            enviar_correo_unimag(email, codigo)
+        except Exception:
+            return Response({'error': 'Error al enviar el correo de recuperación. Intenta nuevamente.'}, status=500)
+        
         CodigoVerificacion.objects.update_or_create(
             correo=email,
             defaults={'codigo': codigo, 'creado_en': timezone.now()}
         )
         
-        enviar_correo_unimag(email, codigo)
-        
         return Response({'mensaje': 'Código enviado. Revisa tu correo.'})
         
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
+        
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def recuperar_password_confirmar(request):

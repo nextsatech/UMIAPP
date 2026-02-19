@@ -30,13 +30,13 @@ const List<Map<String, String>> CARRERAS_UNIMAG = [
 class ForoScreen extends StatefulWidget {
   final String tipoForo;
   final String username;
-  final String password;
+  final String token;
 
   const ForoScreen({
     super.key,
     required this.tipoForo,
     required this.username,
-    required this.password,
+    required this.token,
   });
 
   @override
@@ -76,7 +76,7 @@ class _ForoScreenState extends State<ForoScreen> {
 
   void _recargar() {
     setState(() {
-      _posts = _servicio.getPostsForo(widget.tipoForo, _filtroCarrera, widget.username, widget.password);
+      _posts = _servicio.getPostsForo(widget.tipoForo, _filtroCarrera, widget.token);
     });
   }
 
@@ -158,7 +158,7 @@ class _ForoScreenState extends State<ForoScreen> {
                         esConfesion: _esConfesion,
                         colorTema: _colorPrimario,
                         username: widget.username,
-                        password: widget.password,
+                        token: widget.token,
                       );
                     },
                   );
@@ -175,7 +175,7 @@ class _ForoScreenState extends State<ForoScreen> {
               builder: (_) => _DialogoPublicar(
                 tipoForo: widget.tipoForo,
                 username: widget.username,
-                password: widget.password,
+                token: widget.token,
               ),
             );
             if (resultado == true) _recargar();
@@ -190,12 +190,12 @@ class _ForoScreenState extends State<ForoScreen> {
 class _DialogoPublicar extends StatefulWidget {
   final String tipoForo;
   final String username;
-  final String password;
+  final String token;
   
   const _DialogoPublicar({
     required this.tipoForo, 
     required this.username, 
-    required this.password
+    required this.token
   });
 
   @override
@@ -209,7 +209,7 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
   
   bool _esAnonimo = false;
   bool _enviando = false; 
-  String? _carreraSeleccionada; // Volvemos al selector
+  String? _carreraSeleccionada;
 
   @override
   void initState() {
@@ -217,7 +217,6 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
     if (widget.tipoForo == 'CONFESIONES') {
       _esAnonimo = true;
     }
-    // Si es DUDAS, iniciamos en TODAS (null al enviar) o selecciona una por defecto
     if (widget.tipoForo == 'DUDAS') {
       _carreraSeleccionada = 'TODAS'; 
     }
@@ -228,7 +227,6 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
 
     setState(() => _enviando = true); 
 
-    // Si selecciona 'TODAS', enviamos null para que el backend lo tome como general
     String? carreraEnviar;
     if (widget.tipoForo == 'DUDAS') {
       carreraEnviar = (_carreraSeleccionada == 'TODAS') ? null : _carreraSeleccionada;
@@ -242,7 +240,7 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
       'tag': _tagCtrl.text.isNotEmpty ? _tagCtrl.text : null
     };
 
-    final exito = await _service.crearPostForo(data, widget.username, widget.password);
+    final exito = await _service.crearPostForo(data, widget.token);
 
     if (mounted) {
       setState(() => _enviando = false); 
@@ -275,7 +273,6 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
             ),
             const SizedBox(height: 10),
             
-            // CHECKBOX ANÓNIMO
             if (widget.tipoForo != 'CONFESIONES')
               Row(
                 children: [
@@ -287,8 +284,6 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
                 ],
               ),
 
-            // SELECTOR DE CARRERA (Solo en DUDAS)
-            // Esto asegura que el filtro funcione bien en el feed
             if (widget.tipoForo == 'DUDAS') ...[
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
@@ -307,14 +302,12 @@ class _DialogoPublicarState extends State<_DialogoPublicar> {
               ),
             ],
 
-            // CAMPO TAG / MATERIA
-            // Aquí escriben "Cálculo", "Electiva", etc.
             if (widget.tipoForo != 'CONFESIONES') ...[
               const SizedBox(height: 10),
               TextField(
                 controller: _tagCtrl,
                 decoration: const InputDecoration(
-                  labelText: "Materia / Tema (Ej: Cálculo, Fiesta)",
+                  labelText: "Hashtag",
                   prefixIcon: Icon(Icons.tag),
                   border: OutlineInputBorder()
                 ),
@@ -345,14 +338,14 @@ class _TarjetaForo extends StatefulWidget {
   final bool esConfesion;
   final Color colorTema;
   final String username;
-  final String password;
+  final String token;
 
   const _TarjetaForo({
     required this.post, 
     required this.esConfesion, 
     required this.colorTema,
     required this.username,
-    required this.password,
+    required this.token,
   });
 
   @override
@@ -379,8 +372,7 @@ class _TarjetaForoState extends State<_TarjetaForo> {
 
     bool exito = await _servicio.toggleLikeForo(
       widget.post['id'], 
-      widget.username, 
-      widget.password
+      widget.token
     );
 
     if (!exito) {
@@ -396,9 +388,7 @@ class _TarjetaForoState extends State<_TarjetaForo> {
   @override
   Widget build(BuildContext context) {
     String subtitulo = "";
-    // Priorizamos mostrar la carrera filtro si existe, si no la carrera del usuario
     if (widget.post['carrera_filtro'] != null && widget.post['carrera_filtro'].toString().isNotEmpty) {
-      // Buscamos el nombre bonito de la carrera en la lista
       final carreraItem = CARRERAS_UNIMAG.firstWhere(
         (e) => e['val'] == widget.post['carrera_filtro'], 
         orElse: () => {'label': widget.post['carrera_filtro']}
@@ -487,7 +477,7 @@ class _TarjetaForoState extends State<_TarjetaForo> {
                             otroUsuarioId: widget.post['usuario_id'],
                             otroUsuarioNombre: widget.post['usuario_nombre'],
                             myUser: widget.username,
-                            myPass: widget.password,
+                            token: widget.token,
                           )
                         )
                       );

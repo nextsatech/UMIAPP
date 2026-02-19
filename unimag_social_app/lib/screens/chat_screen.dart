@@ -6,14 +6,14 @@ class ChatScreen extends StatefulWidget {
   final int otroUsuarioId;
   final String otroUsuarioNombre;
   final String myUser;
-  final String myPass;
+  final String token;
 
   const ChatScreen({
     super.key,
     required this.otroUsuarioId,
     required this.otroUsuarioNombre,
     required this.myUser,
-    required this.myPass,
+    required this.token,
   });
 
   @override
@@ -31,23 +31,23 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _cargarMensajes();
-    
-    _timer = Timer.periodic(const Duration(seconds: 3), (timer) => _cargarMensajes());
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) => _cargarMensajes());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _textCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
   void _cargarMensajes() async {
-    final nuevos = await _service.getMensajes(widget.otroUsuarioId, widget.myUser, widget.myPass);
+    final nuevos = await _service.getMensajes(widget.otroUsuarioId, widget.token);
     if (mounted) {
       setState(() {
         _mensajes = nuevos;
       });
-      
     }
   }
 
@@ -61,7 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _scrollToBottom();
 
-    await _service.enviarMensaje(widget.otroUsuarioId, texto, widget.myUser, widget.myPass);
+    await _service.enviarMensaje(widget.otroUsuarioId, texto, widget.token);
     _cargarMensajes(); 
   }
 
@@ -86,8 +86,6 @@ class _ChatScreenState extends State<ChatScreen> {
             const Text("Se borra en 24h ⏳", style: TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
-        backgroundColor: const Color(0xFF0033A0),
-        foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -128,10 +126,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           
-          
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             child: Row(
               children: [
                 Expanded(
@@ -141,8 +138,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       hintText: "Escribe un mensaje...",
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
-                      filled: true,
-                      fillColor: Colors.grey[100],
                     ),
                   ),
                 ),

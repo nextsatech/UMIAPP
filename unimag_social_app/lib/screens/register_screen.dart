@@ -182,8 +182,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           if (_paso == 2) ...[
                             _buildInput(_codigoCtrl, "Código de 6 dígitos", Icons.lock_clock_outlined, tipo: TextInputType.number),
                             const SizedBox(height: 15),
-                            _buildInput(_userCtrl, "Nombre de Usuario (Opcional)", Icons.person_outline),
-                            const SizedBox(height: 15),
                             _buildInput(_passCtrl, "Contraseña", Icons.lock_outline, oculto: true),
                             const SizedBox(height: 15),
                             
@@ -194,8 +192,8 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                 labelText: "Selecciona tu Carrera",
                                 prefixIcon: const Icon(Icons.school_outlined, color: Color(0xFF0033A0)),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-                                filled: true,
-                                fillColor: Colors.grey[100],
+                                
+                                
                               ),
                               items: CARRERAS_UNIMAG.map((c) => DropdownMenuItem(value: c['val'], child: Text(c['label']!, overflow: TextOverflow.ellipsis))).toList(),
                               onChanged: (val) => setState(() => _carreraSeleccionada = val),
@@ -250,8 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF0033A0)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-        filled: true,
-        fillColor: Colors.grey[100],
+        
         contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
       ),
     );

@@ -2,18 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ChatService {
-  
-  final String apiRoot = 'http://172.17.0.1:8000/api';
+  final String apiRoot = 'https://umiapp.pythonanywhere.com/api';
 
-  Map<String, String> _getAuthHeader(String user, String pass) {
-    String basicAuth = 'Basic ${base64Encode(utf8.encode('$user:$pass'))}';
-    return {'authorization': basicAuth, 'Content-Type': 'application/json'};
+  Map<String, String> _getAuthHeader(String token) {
+    return {
+      'Authorization': 'Token $token', 
+      'Content-Type': 'application/json'
+    };
   }
 
-  Future<List<dynamic>> getMensajes(int otroUsuarioId, String user, String pass) async {
+  Future<List<dynamic>> getMensajes(int otroUsuarioId, String token) async {
     final url = Uri.parse('$apiRoot/chat/$otroUsuarioId/');
     try {
-      final response = await http.get(url, headers: _getAuthHeader(user, pass));
+      final response = await http.get(url, headers: _getAuthHeader(token));
       if (response.statusCode == 200) {
         return jsonDecode(utf8.decode(response.bodyBytes));
       }
@@ -23,13 +24,12 @@ class ChatService {
     }
   }
 
-  // Enviar mensaje
-  Future<bool> enviarMensaje(int otroUsuarioId, String contenido, String user, String pass) async {
+  Future<bool> enviarMensaje(int otroUsuarioId, String contenido, String token) async {
     final url = Uri.parse('$apiRoot/chat/$otroUsuarioId/');
     try {
       final response = await http.post(
         url,
-        headers: _getAuthHeader(user, pass),
+        headers: _getAuthHeader(token),
         body: jsonEncode({'contenido': contenido}),
       );
       return response.statusCode == 201;
@@ -38,10 +38,10 @@ class ChatService {
     }
   }
 
-  Future<List<dynamic>> getChatsActivos(String user, String pass) async {
+  Future<List<dynamic>> getChatsActivos(String token) async {
     final url = Uri.parse('$apiRoot/mis-chats/');
     try {
-      final response = await http.get(url, headers: _getAuthHeader(user, pass));
+      final response = await http.get(url, headers: _getAuthHeader(token));
       if (response.statusCode == 200) {
         return jsonDecode(utf8.decode(response.bodyBytes));
       }
