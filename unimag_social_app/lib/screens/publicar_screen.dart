@@ -2,16 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/objetos_service.dart';
+import '../services/auth_service.dart';
 
 class PublicarScreen extends StatefulWidget {
-  final String username;
-  final String password;
-
-  const PublicarScreen({
-    super.key, 
-    required this.username, 
-    required this.password
-  });
+  const PublicarScreen({super.key});
 
   @override
   State<PublicarScreen> createState() => _PublicarScreenState();
@@ -57,7 +51,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("La cámara no está disponible en este dispositivo (PC)"),
+            content: Text("La cámara no está disponible en este dispositivo"),
             backgroundColor: Colors.orange,
           )
         );
@@ -75,6 +69,19 @@ class _PublicarScreenState extends State<PublicarScreen> {
 
     setState(() => _subiendo = true);
 
+    final authService = AuthService();
+    final sesion = await authService.obtenerSesion();
+
+    if (sesion == null || sesion['token'] == null) {
+      setState(() => _subiendo = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error de sesión. Vuelve a iniciar sesión."))
+        );
+      }
+      return;
+    }
+
     final servicio = ObjetosService();
     final exito = await servicio.crearObjeto(
       titulo: _tituloCtrl.text,
@@ -82,8 +89,7 @@ class _PublicarScreenState extends State<PublicarScreen> {
       ubicacion: _ubicacionCtrl.text,
       estado: _estadoSeleccionado,
       imagenes: _imagenes,
-      user: widget.username,
-      pass: widget.password
+      token: sesion['token']!,
     );
 
     setState(() => _subiendo = false);
@@ -109,8 +115,6 @@ class _PublicarScreenState extends State<PublicarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Nueva Publicación"),
-        backgroundColor: const Color(0xFF0033A0),
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -119,23 +123,19 @@ class _PublicarScreenState extends State<PublicarScreen> {
           children: [
             TextField(
               controller: _tituloCtrl,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Título (Opcional)",
                 hintText: "Ej: Llaves, Carnet, Venta...",
-                prefixIcon: const Icon(Icons.title, color: Color(0xFF0033A0)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                
+                prefixIcon: Icon(Icons.title),
               ),
             ),
             const SizedBox(height: 15),
 
             DropdownButtonFormField<String>(
               value: _estadoSeleccionado,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Estado del objeto / Tipo",
-                prefixIcon: const Icon(Icons.info_outline, color: Color(0xFF0033A0)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-               
+                prefixIcon: Icon(Icons.info_outline),
               ),
               items: const [
                 DropdownMenuItem(value: 'N/A', child: Text("N/A - Ninguna (Por defecto)")),
@@ -149,25 +149,20 @@ class _PublicarScreenState extends State<PublicarScreen> {
             TextField(
               controller: _descCtrl,
               maxLines: 4,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Descripción",
                 hintText: "¿Qué encontraste? ¿Qué buscas?",
                 alignLabelWithHint: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                
               ),
             ),
             const SizedBox(height: 15),
 
             TextField(
               controller: _ubicacionCtrl,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Ubicación",
                 hintText: "Ej: Bloque Sierra Nevada",
-                prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF0033A0)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                
-                
+                prefixIcon: Icon(Icons.location_on_outlined),
               ),
             ),
             const SizedBox(height: 20),

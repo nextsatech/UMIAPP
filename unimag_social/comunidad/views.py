@@ -30,7 +30,6 @@ from django.db import transaction
 
 
 # --- FUNCIONES DE CORREO Y SUGERENCIAS ---
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def enviar_sugerencia(request):
@@ -38,32 +37,26 @@ def enviar_sugerencia(request):
     mensaje = request.data.get('mensaje')
     
     if not mensaje:
-        return Response({'success': False, 'message': 'El mensaje no puede estar vacío'}, status=400)
-
-    asunto = f"💡 Nueva Sugerencia de {usuario.username} ({usuario.perfilestudiante.carrera})"
-    cuerpo = f"""
-    El usuario {usuario.username} ({usuario.email}) ha enviado la siguiente sugerencia:
-    
-    ----------------------------------------------------
-    {mensaje}
-    ----------------------------------------------------
-    
-    Fecha: {timezone.now()}
-    """
+        return Response({"error": "El mensaje no puede estar vacío"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    try:
+        carrera = usuario.perfilestudiante.carrera
+    except Exception:
+        carrera = "Sin perfil / Administrador"
+        
+    asunto = f"💡 Nueva Sugerencia de {usuario.username} ({carrera})"
     
     try:
         send_mail(
             asunto,
-            cuerpo,
-            settings.EMAIL_HOST_USER, 
-            ['umimag2026@gmail.com'], 
+            mensaje,
+            settings.EMAIL_HOST_USER,
+            ['umimag2026@gmail.com'],  
             fail_silently=False,
         )
-        return Response({'success': True, 'message': 'Sugerencia enviada'})
+        return Response({"mensaje": "Sugerencia enviada con éxito"}, status=status.HTTP_200_OK)
     except Exception as e:
-        print(f"Error enviando correo: {e}")
-        return Response({'success': False, 'message': 'Error al enviar correo'}, status=500)
-
+        return Response({"error": f"Error al enviar la sugerencia: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 def enviar_correo_unimag(email, codigo):
     send_mail(
         'Tu código de verificación UMi',

@@ -180,7 +180,7 @@ class _ConfiguracionScreenState extends State<ConfiguracionScreen> {
           ListTile(
             leading: const Icon(Icons.info_outline, color: Colors.grey),
             title: const Text("Versión de la App"),
-            subtitle: const Text("1.0.0 (Beta)"),
+            subtitle: const Text("1.0.1 (Beta)"),
           ),
           ListTile(
             leading: const Icon(Icons.support_agent, color: Colors.grey),
